@@ -7,7 +7,7 @@
   <meta name="description" content="Nalbur mağazaları için satış, stok, cari, tedarikçi ve kasa yönetimi" />
   <title>Nalbur Pro</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=035" />
 </head>
 <body>
   <div class="app-shell">
@@ -26,11 +26,12 @@
         <button class="nav-btn" data-view="caris">👥 <span>Cariler</span></button>
         <button class="nav-btn" data-view="purchases">🚚 <span>Alış & Tedarikçi</span></button>
         <button class="nav-btn" data-view="cash">💰 <span>Kasa</span></button>
+        <button class="nav-btn" data-view="staff">🧑‍💼 <span>Personel & Yetkiler</span></button>
         <button class="nav-btn" data-view="data">⚙️ <span>Veri & Ayarlar</span></button>
       </nav>
       <div class="side-footer">
         <button id="themeToggle" class="ghost-btn">🌙 Tema</button>
-        <small>v0.3.2 Mobil + Kodla e-Belge</small>
+        <small>v0.3.5 Personel + Yetkiler + Satış Onayı + Kodla e-Belge</small>
       </div>
     </aside>
 
@@ -43,7 +44,7 @@
         </div>
         <div class="top-actions">
           <span class="sync-chip">● Cihazda kayıtlı</span>
-          <div class="user-chip"><span>UÇ</span><div><b>Ufuk</b><small>Yönetici</small></div></div>
+          <div class="user-session"><div class="user-chip" id="currentUserChip"><span id="currentUserInitials">UÇ</span><div><b id="currentUserName">Ufuk</b><small id="currentUserRole">Yönetici</small></div></div><button class="ghost-btn logout-btn" id="logoutBtn" type="button">Çıkış</button></div>
         </div>
       </header>
 
@@ -88,6 +89,7 @@
             <div class="panel-head"><div><h2>Sepet</h2><p id="cartCount">0 kalem</p></div><button class="ghost-btn" id="clearCart">Temizle</button></div>
             <label class="field-label">Müşteri / Cari</label>
             <select id="customerSelect"></select>
+            <small class="field-help">Veresiye satışta cari seçimi ayrıca doğrulanır.</small>
             <div id="cartItems" class="cart-items"></div>
             <div class="totals">
               <div><span>Ara Toplam</span><b id="subtotal">₺0</b></div>
@@ -110,7 +112,8 @@
             <div class="search-row grow"><input id="salesSearch" placeholder="Müşteri, ödeme veya fiş no ara..." /></div>
             <button class="ghost-btn" id="exportSalesCsv">CSV Aktar</button>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>Fiş No</th><th>Tarih</th><th>Müşteri</th><th>Ödeme</th><th>Kalem</th><th>Tutar</th><th>İşlem</th></tr></thead><tbody id="salesTableBody"></tbody></table></div>
+          <div id="mobileSalesList" class="mobile-sales-list"></div>
+          <div class="table-wrap sales-table-wrap"><table><thead><tr><th>Fiş No</th><th>Tarih</th><th>Müşteri</th><th>Danışman</th><th>Ödeme</th><th>Kalem</th><th>Tutar</th><th>İşlem</th></tr></thead><tbody id="salesTableBody"></tbody></table></div>
         </article>
       </section>
 
@@ -120,7 +123,7 @@
             <div class="search-row grow"><input id="productSearch" placeholder="Ürün, barkod, kategori veya raf ara..." /></div>
             <div class="toolbar-actions"><button class="ghost-btn" id="exportProductsCsv">CSV Aktar</button><button class="primary-btn" id="addProductBtn">＋ Yeni Ürün</button></div>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kategori</th><th>Barkod</th><th>Birim</th><th>Stok</th><th>Alış</th><th>Satış</th><th>Kâr</th><th>Raf</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="productTableBody"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kategori</th><th>Barkod</th><th>Birim</th><th>Stok</th><th class="cost-col">Alış</th><th>Satış</th><th class="cost-col">Kâr</th><th>Raf</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="productTableBody"></tbody></table></div>
         </article>
       </section>
 
@@ -192,10 +195,28 @@
         <article class="panel space-top"><div class="panel-head"><div><h2>Kasa Hareketleri</h2><p>Gelir, gider, satış ve tahsilatlar</p></div><button class="primary-btn" id="addCashMoveBtn">＋ Kasa Hareketi</button></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Ödeme</th><th>Tutar</th></tr></thead><tbody id="cashTableBody"></tbody></table></div></article>
       </section>
 
+      <section class="view" id="staff">
+        <div class="kpi-grid small personnel-kpis">
+          <article class="kpi"><span>Aktif Personel</span><strong id="staffCount">0</strong><small id="staffActiveCount">0 kullanıcı aktif</small></article>
+          <article class="kpi"><span>Aylık Maaş Toplamı</span><strong id="staffSalaryTotal">₺0</strong><small>Aktif personel</small></article>
+          <article class="kpi"><span>Bu Ay Avans</span><strong id="staffAdvanceTotal">₺0</strong><small id="staffSalaryPaidTotal">Maaş ödeme ₺0</small></article>
+          <article class="kpi"><span>Bugün İzinli</span><strong id="staffOnLeaveToday">0</strong><small id="staffSellerCount">0 satış danışmanı</small></article>
+        </div>
+        <article class="panel space-top">
+          <div class="panel-head staff-panel-head"><div><h2>Personel Kartları & Yetkiler</h2><p>Maaş, avans, izin ve program işlem yetkilerini tek yerden takip et.</p></div><div class="toolbar-actions staff-admin-actions"><button class="ghost-btn" id="addPayrollBtn">₺ Maaş / Avans</button><button class="ghost-btn" id="addLeaveBtn">🏖 İzin Ekle</button><button class="primary-btn" id="addStaffBtn">＋ Personel Ekle</button></div></div>
+          <div class="security-note"><b>🔐 Cihaz içi test sürümü</b><span>GitHub Pages sürümünde kullanıcı/PIN bilgileri bu cihazda tutulur. Farklı telefonların aynı personel hesabını kullanması için sonraki aşamada merkezi veritabanı ve güvenli kimlik doğrulama bağlanacaktır.</span></div>
+          <div id="staffList" class="staff-grid"></div>
+        </article>
+        <div class="grid-2 equal space-top personnel-admin-panels">
+          <article class="panel"><div class="panel-head"><div><h2>Maaş & Avans Hareketleri</h2><p>Avans, maaş ödemesi, prim ve kesinti kayıtları</p></div></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Personel</th><th>İşlem</th><th>Ödeme</th><th>Açıklama</th><th>Tutar</th><th></th></tr></thead><tbody id="payrollTableBody"></tbody></table></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>İzin Kayıtları</h2><p>Yıllık, mazeret, rapor ve ücretsiz izin</p></div></div><div class="table-wrap"><table><thead><tr><th>Personel</th><th>Tür</th><th>Tarih</th><th>Gün</th><th>Durum</th><th>Açıklama</th><th></th></tr></thead><tbody id="leaveTableBody"></tbody></table></div></article>
+        </div>
+      </section>
+
       <section class="view" id="data">
         <div class="grid-2 equal">
           <article class="panel"><div class="panel-head"><div><h2>Yedekleme</h2><p>Tüm ürün, cari, satış ve kasa kayıtları</p></div></div><div class="data-actions"><button class="primary-btn" id="exportBackup">⬇ JSON Yedek Al</button><label class="file-btn">⬆ Yedek Yükle<input id="importBackup" type="file" accept="application/json" /></label></div><p class="hint">Yedek dosyası başka cihazda da içe aktarılabilir.</p></article>
-          <article class="panel"><div class="panel-head"><div><h2>Sistem Bilgisi</h2><p>Bu sürüm cihaz içi prototiptir</p></div></div><div class="info-list"><div><span>Veri depolama</span><b>Tarayıcı LocalStorage</b></div><div><span>Sürüm</span><b>v0.3.2 Mobil + Kodla e-Belge</b></div><div><span>Çalışma</span><b>Offline PWA</b></div><div><span>e-Belge entegratörü</span><b>Kodla</b></div><div><span>e-Belge mimarisi</span><b>Nalbur Pro → Güvenli Backend/Worker → Kodla API → GİB</b></div><div><span>Sonraki hedef</span><b>Kodla test API + merkezi veritabanı</b></div></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Sistem Bilgisi</h2><p>Bu sürüm cihaz içi prototiptir</p></div></div><div class="info-list"><div><span>Veri depolama</span><b>Tarayıcı LocalStorage</b></div><div><span>Sürüm</span><b>v0.3.5 Personel + Yetkiler + Satış Onayı + Kodla e-Belge</b></div><div><span>Çalışma</span><b>Offline PWA</b></div><div><span>e-Belge entegratörü</span><b>Kodla</b></div><div><span>e-Belge mimarisi</span><b>Nalbur Pro → Güvenli Backend/Worker → Kodla API → GİB</b></div><div><span>Sonraki hedef</span><b>Merkezi kullanıcı girişi + Kodla test API + bulut veritabanı</b></div></div></article>
         </div>
         <article class="panel danger-zone space-top"><div><h2>Test Verisine Dön</h2><p>Tüm mevcut cihaz verisini siler ve örnek verileri geri yükler.</p></div><button class="danger-btn" id="resetData">Tüm Veriyi Sıfırla</button></article>
       </section>
@@ -205,6 +226,16 @@
   <dialog id="productDialog"><form method="dialog" id="productForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="productDialogTitle">Yeni Ürün</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ürün Adı<input name="name" required /></label><label>Kategori<input name="category" required /></label><label>Barkod<input name="barcode" /></label><label>Birim<select name="unit"><option>Adet</option><option>Kutu</option><option>Metre</option><option>Kg</option><option>Top</option><option>Litre</option><option>Torba</option><option>Paket</option></select></label><label>Stok<input name="stock" type="number" step="0.01" required /></label><label>Minimum Stok<input name="minStock" type="number" step="0.01" required /></label><label>Alış Fiyatı<input name="buy" type="number" step="0.01" required /></label><label>Satış Fiyatı<input name="sell" type="number" step="0.01" required /></label><label>Raf<input name="shelf" placeholder="A-03-02" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveProduct">Kaydet</button></div></form></dialog>
 
   <dialog id="cariDialog"><form method="dialog" id="cariForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="cariDialogTitle">Yeni Cari</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ad / Firma<input name="name" required /></label><label>Telefon<input name="phone" /></label><label>Fiyat Grubu<select name="priceGroup"><option>Perakende</option><option>Usta</option><option>Toptan</option></select></label><label>Açılış Bakiyesi<input name="balance" type="number" step="0.01" value="0" /></label><label>VKN / TCKN<input name="taxNo" maxlength="11" inputmode="numeric" /></label><label>Vergi Dairesi<input name="taxOffice" /></label><label>E-posta<input name="email" type="email" /></label><label>e-Fatura Kullanıcısı<select name="eInvoiceUser"><option value="unknown">Entegratörden sorgula</option><option value="yes">Evet</option><option value="no">Hayır</option></select></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCari">Kaydet</button></div></form></dialog>
+
+  <dialog id="creditSaleDialog"><form method="dialog" id="creditSaleForm" class="modal-form">
+    <div class="modal-head"><h2>Veresiye Satış</h2><button value="cancel">✕</button></div>
+    <p class="modal-note">Veresiye satış mutlaka gerçek bir cari hesaba bağlanır. Peşin Müşteri seçilemez.</p>
+    <div class="form-grid">
+      <label class="span-2">Cari / Müşteri<select name="cariId" id="creditCariSelect" required></select></label>
+    </div>
+    <div id="creditSaleSummary" class="credit-summary"></div>
+    <div class="modal-actions"><button value="cancel" class="ghost-btn">Vazgeç</button><button value="default" class="pay-btn warning" id="confirmCreditSale">Veresiye Satışı Tamamla</button></div>
+  </form></dialog>
 
   <dialog id="collectDialog"><form method="dialog" id="collectForm" class="modal-form"><div class="modal-head"><h2>Cari Tahsilat</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Cari<select name="cariId" id="collectCari" required></select></label><label>Tahsilat Tutarı<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme<select name="payment"><option>Nakit</option><option>Kart</option><option>Banka</option></select></label><label>Açıklama<input name="note" value="Cari tahsilat" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCollection">Tahsil Et</button></div></form></dialog>
 
@@ -218,9 +249,21 @@
 
   <dialog id="supplierPaymentDialog"><form method="dialog" id="supplierPaymentForm" class="modal-form"><input type="hidden" name="supplierId" /><div class="modal-head"><h2>Tedarikçi Ödemesi</h2><button value="cancel">✕</button></div><p id="supplierPaymentName" class="modal-note"></p><div class="form-grid"><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme<select name="payment"><option>Nakit</option><option>Banka</option><option>Kart</option></select></label><label class="span-2">Açıklama<input name="note" value="Tedarikçi ödemesi" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveSupplierPayment">Ödeme Kaydet</button></div></form></dialog>
 
-  <dialog id="saleDetailDialog"><div class="modal-form"><div class="modal-head"><h2>Satış Detayı</h2><button id="closeSaleDetail">✕</button></div><div id="saleDetailContent"></div></div></dialog>
+  <dialog id="saleDetailDialog"><div class="modal-form"><div class="modal-head"><h2>Satış Detayı</h2><button id="closeSaleDetail">✕</button></div><div id="saleDetailContent"></div><div class="modal-actions sale-detail-actions"><button class="danger-btn" id="deleteSaleFromDetail" type="button">Satışı Sil / Geri Al</button><button class="ghost-btn" id="closeSaleDetailBottom" type="button">Kapat</button></div></div></dialog>
+
+  <dialog id="saleConfirmDialog"><div class="modal-form sale-confirm-modal"><div class="modal-head"><div><h2>İşlem Özeti</h2><p>Satışı onaylamadan önce son kontrol</p></div><button id="closeSaleConfirm" type="button">✕</button></div><div id="saleConfirmContent"></div><div class="sale-confirm-warning">Bu ekrandaki bilgileri kontrol et. “Onayla ve Satışı Tamamla” demeden stok, kasa veya cari hesabına işlem yapılmaz.</div><div class="modal-actions"><button class="ghost-btn" id="cancelFinalSale" type="button">Geri Dön</button><button class="primary-btn" id="confirmFinalSale" type="button">✓ Onayla ve Satışı Tamamla</button></div></div></dialog>
+
+  <dialog id="staffDialog"><form method="dialog" id="staffForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="staffDialogTitle">Personel Ekle</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ad Soyad<input name="name" required /></label><label>Telefon<input name="phone" /></label><label>Görev / Departman<input name="department" placeholder="Satış, Kasa, Depo..." /></label><label>İşe Giriş<input name="hireDate" type="date" /></label><label>Aylık Net Maaş<input name="salary" type="number" min="0" step="0.01" value="0" /></label><label>Yıllık İzin Hakkı (Gün)<input name="annualLeave" type="number" min="0" step="1" value="14" /></label><label>Kullanıcı Adı<input name="username" required autocomplete="off" /></label><label>PIN / Şifre<input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="En az 4 hane" /></label><label>Rol<select name="role" id="staffRole"><option value="sales">Satış Danışmanı</option><option value="admin">Yönetici</option></select></label><label class="toggle-label"><input name="active" type="checkbox" checked /> Personel / kullanıcı aktif</label></div><div class="permission-block"><div class="permission-head"><h3>Program İşlem Yetkileri</h3><button class="ghost-btn compact-btn" type="button" id="applySellerDefaults">Danışman Varsayılanı</button></div><div class="permission-grid" id="permissionGrid">
+    <label><input type="checkbox" name="perm_sale" /> Hızlı satış</label><label><input type="checkbox" name="perm_viewOwnSales" /> Kendi satışlarını gör</label><label><input type="checkbox" name="perm_viewAllSales" /> Tüm satışları gör</label><label><input type="checkbox" name="perm_deleteSales" /> Satış sil / geri al</label><label><input type="checkbox" name="perm_creditSale" /> Veresiye satış</label><label><input type="checkbox" name="perm_viewProducts" /> Ürün / stok görüntüle</label><label><input type="checkbox" name="perm_editProducts" /> Ürün ekle / düzenle</label><label><input type="checkbox" name="perm_stockAdjust" /> Stok düzeltme</label><label><input type="checkbox" name="perm_viewCaris" /> Cari görüntüle</label><label><input type="checkbox" name="perm_editCaris" /> Cari ekle / düzenle</label><label><input type="checkbox" name="perm_collectCari" /> Cari tahsilat</label><label><input type="checkbox" name="perm_purchases" /> Alış / tedarikçi</label><label><input type="checkbox" name="perm_cash" /> Kasa</label><label><input type="checkbox" name="perm_invoices" /> e-Belge</label><label><input type="checkbox" name="perm_staff" /> Personel yönetimi</label><label><input type="checkbox" name="perm_data" /> Yedek / ayarlar</label>
+  </div></div><p class="modal-note">Yönetici rolünde tüm yetkiler otomatik açıktır. Satış danışmanında yalnızca seçtiğin işlemler kullanılabilir.</p><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveStaff">Kaydet</button></div></form></dialog>
+
+  <dialog id="payrollDialog"><form method="dialog" id="payrollForm" class="modal-form"><div class="modal-head"><h2>Maaş / Avans Hareketi</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Personel<select name="staffId" id="payrollStaff" required></select></label><label>İşlem<select name="type"><option>Avans</option><option>Maaş Ödemesi</option><option>Prim</option><option>Kesinti</option></select></label><label>Tarih<input name="date" type="date" required /></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme Yöntemi<select name="payment"><option>Nakit</option><option>Banka</option><option>Kart</option><option>Diğer</option></select></label><label>Açıklama<input name="note" placeholder="Eylül avansı vb." /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="savePayroll">Kaydet</button></div></form></dialog>
+
+  <dialog id="leaveDialog"><form method="dialog" id="leaveForm" class="modal-form"><div class="modal-head"><h2>İzin Kaydı</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Personel<select name="staffId" id="leaveStaff" required></select></label><label>İzin Türü<select name="type"><option>Yıllık İzin</option><option>Mazeret İzni</option><option>Rapor</option><option>Ücretsiz İzin</option><option>Diğer</option></select></label><label>Başlangıç<input name="startDate" type="date" required /></label><label>Bitiş<input name="endDate" type="date" required /></label><label>Gün<input name="days" id="leaveDays" type="number" min="0.5" step="0.5" required /></label><label>Durum<select name="status"><option>Onaylandı</option><option>Bekliyor</option><option>Reddedildi</option></select></label><label class="span-2">Açıklama<input name="note" placeholder="İzin açıklaması" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveLeave">Kaydet</button></div></form></dialog>
 
   <dialog id="scannerDialog"><div class="modal-form scanner-modal"><div class="modal-head"><h2>Barkod Tara</h2><button id="closeScanner">✕</button></div><video id="scannerVideo" autoplay playsinline muted></video><p id="scannerStatus" class="hint">Kamera hazırlanıyor…</p><button id="manualBarcode" class="ghost-btn wide">Barkodu Elle Gir</button></div></dialog>
+
+  <div id="loginScreen" class="login-screen" aria-hidden="true"><div class="login-card"><div class="login-brand"><div class="brand-mark">NP</div><div><h1>Nalbur Pro</h1><p>Kullanıcı Girişi</p></div></div><form id="loginForm"><label>Kullanıcı Adı<input id="loginUsername" name="username" autocomplete="username" required /></label><label>PIN / Şifre<input id="loginPin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label><button class="primary-btn wide" type="submit">Giriş Yap</button></form><p id="loginError" class="login-error"></p><small class="login-hint">İlk yönetici: <b>ufuk</b> • PIN: <b>1234</b>. İlk girişten sonra Kullanıcılar bölümünden PIN'i değiştir.</small></div></div>
 
   <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobil ana menü">
     <button class="mobile-nav-btn active" data-mobile-view="dashboard" type="button"><span>⌂</span><small>Ana Sayfa</small></button>
@@ -231,6 +274,6 @@
   </nav>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=035"></script>
 </body>
 </html>
