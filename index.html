@@ -4,34 +4,41 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
-  <meta name="description" content="Nalbur mağazaları için satış, stok, cari, tedarikçi ve kasa yönetimi" />
-  <title>Nalbur Pro</title>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="Geçer Nalbur — hırdavat ve yapı market için satış, stok, cari, tedarikçi, kasa ve rapor yönetimi" />
+  <title>Geçer Nalbur</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css?v=035" />
+  <link rel="icon" type="image/svg+xml" href="icons/logo-mark.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=040" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand">
-        <div class="brand-mark">NP</div>
-        <div><strong>NALBUR PRO</strong><span>Mağaza Yönetimi</span></div>
+        <img class="brand-logo" src="icons/logo-mark.svg" alt="" width="42" height="42" />
+        <div><strong>GEÇER <em>NALBUR</em></strong><span>Hırdavat • Yapı Market</span></div>
       </div>
       <nav id="nav">
         <button class="nav-btn active" data-view="dashboard">🏠 <span>Ana Sayfa</span></button>
         <button class="nav-btn" data-view="sale">🛒 <span>Hızlı Satış</span></button>
         <button class="nav-btn" data-view="sales">🧾 <span>Satış Geçmişi</span></button>
+        <button class="nav-btn" data-view="quotes">📝 <span>Teklifler</span></button>
         <button class="nav-btn" data-view="invoices">🧾 <span>e-Belge</span></button>
         <button class="nav-btn" data-view="products">📦 <span>Ürün & Stok</span></button>
         <button class="nav-btn" data-view="stock">🔁 <span>Stok Hareketleri</span></button>
         <button class="nav-btn" data-view="caris">👥 <span>Cariler</span></button>
         <button class="nav-btn" data-view="purchases">🚚 <span>Alış & Tedarikçi</span></button>
-        <button class="nav-btn" data-view="cash">💰 <span>Kasa</span></button>
+        <button class="nav-btn" data-view="cash">💰 <span>Kasa & Gün Sonu</span></button>
+        <button class="nav-btn" data-view="cheques">📑 <span>Çek & Senet</span></button>
+        <button class="nav-btn" data-view="reports">📊 <span>Raporlar</span></button>
         <button class="nav-btn" data-view="staff">🧑‍💼 <span>Personel & Yetkiler</span></button>
         <button class="nav-btn" data-view="data">⚙️ <span>Veri & Ayarlar</span></button>
       </nav>
       <div class="side-footer">
         <button id="themeToggle" class="ghost-btn">🌙 Tema</button>
-        <small>v0.3.5 Personel + Yetkiler + Satış Onayı + Kodla e-Belge</small>
+        <small>Geçer Nalbur v0.4.0</small>
       </div>
     </aside>
 
@@ -86,14 +93,16 @@
             <div class="product-grid" id="saleProductGrid"></div>
           </article>
           <article class="panel cart-panel mobile-sale-pane" data-sale-section="cart">
-            <div class="panel-head"><div><h2>Sepet</h2><p id="cartCount">0 kalem</p></div><button class="ghost-btn" id="clearCart">Temizle</button></div>
+            <div class="panel-head"><div><h2>Sepet</h2><p id="cartCount">0 kalem</p></div><div class="toolbar-actions"><button class="ghost-btn compact-btn" id="parkedListBtn" type="button">⏸ Bekleyen <span id="parkedCount">0</span></button><button class="ghost-btn compact-btn" id="clearCart">Temizle</button></div></div>
             <label class="field-label">Müşteri / Cari</label>
             <select id="customerSelect"></select>
             <small class="field-help">Veresiye satışta cari seçimi ayrıca doğrulanır.</small>
             <div id="cartItems" class="cart-items"></div>
             <div class="totals">
               <div><span>Ara Toplam</span><b id="subtotal">₺0</b></div>
-              <div><span>Fiyat Grubu İndirimi</span><b id="discountTotal">₺0</b></div>
+              <div><span>Fiyat Grubu / Satır İndirimi</span><b id="discountTotal">₺0</b></div>
+              <div id="cartDiscountRow" class="hidden-row"><span>Sepet İskontosu</span><b id="cartDiscountTotal">₺0</b></div>
+              <div class="vat-row"><span>KDV (dahil)</span><b id="vatTotal">₺0</b></div>
               <div class="grand"><span>TOPLAM</span><strong id="grandTotal">₺0</strong></div>
             </div>
             <div class="payment-buttons">
@@ -101,6 +110,12 @@
               <button class="pay-btn card" data-pay="Kart">💳 Kart</button>
               <button class="pay-btn bank" data-pay="Banka">🏦 Banka</button>
               <button class="pay-btn warning" data-pay="Veresiye">🧾 Veresiye</button>
+              <button class="pay-btn split" id="splitPayBtn" type="button">➗ Parçalı Ödeme</button>
+            </div>
+            <div class="cart-tools">
+              <button class="ghost-btn compact-btn" id="cartDiscountBtn" type="button">％ İskonto</button>
+              <button class="ghost-btn compact-btn" id="parkCartBtn" type="button">⏸ Beklet</button>
+              <button class="ghost-btn compact-btn" id="saveQuoteBtn" type="button">📝 Teklif</button>
             </div>
           </article>
         </div>
@@ -121,9 +136,9 @@
         <article class="panel">
           <div class="toolbar">
             <div class="search-row grow"><input id="productSearch" placeholder="Ürün, barkod, kategori veya raf ara..." /></div>
-            <div class="toolbar-actions"><button class="ghost-btn" id="exportProductsCsv">CSV Aktar</button><button class="primary-btn" id="addProductBtn">＋ Yeni Ürün</button></div>
+            <div class="toolbar-actions wrap"><button class="ghost-btn" id="bulkPriceBtn" type="button">％ Toplu Fiyat</button><button class="ghost-btn" id="labelPrintBtn" type="button">🏷 Etiket</button><label class="file-btn ghost-btn" id="importProductsLabel">⬆ CSV İçe Aktar<input id="importProductsCsv" type="file" accept=".csv,text/csv,text/plain" /></label><button class="ghost-btn" id="exportProductsCsv">CSV Aktar</button><button class="primary-btn" id="addProductBtn">＋ Yeni Ürün</button></div>
           </div>
-          <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kategori</th><th>Barkod</th><th>Birim</th><th>Stok</th><th class="cost-col">Alış</th><th>Satış</th><th class="cost-col">Kâr</th><th>Raf</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="productTableBody"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kategori</th><th>Barkod</th><th>Birim</th><th>Stok</th><th class="cost-col">Alış</th><th>Satış</th><th class="cost-col">Kâr</th><th>Raf</th><th>KDV</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="productTableBody"></tbody></table></div>
         </article>
       </section>
 
@@ -158,7 +173,7 @@
         </div>
         <div class="grid-2 equal">
           <article class="panel">
-            <div class="panel-head"><div><h2>Hızlı Mal Alış</h2><p>Stok ve tedarikçi hesabına otomatik işler</p></div></div>
+            <div class="panel-head"><div><h2>Hızlı Mal Alış</h2><p>Stok ve tedarikçi hesabına otomatik işler</p></div><button class="primary-btn" id="multiPurchaseBtn" type="button">＋ Çok Kalemli Fatura</button></div>
             <form id="purchaseForm" class="stack-form">
               <label>Tedarikçi<select name="supplierId" id="purchaseSupplier" required></select></label>
               <label>Ürün<select name="productId" id="purchaseProduct" required></select></label>
@@ -173,6 +188,7 @@
             <div class="table-wrap"><table class="compact-table"><thead><tr><th>Tedarikçi</th><th>Telefon</th><th>Borç</th><th>İşlem</th></tr></thead><tbody id="supplierTableBody"></tbody></table></div>
           </article>
         </div>
+        <article class="panel space-top"><div class="panel-head"><div><h2>Sipariş Önerisi</h2><p>Kritik stoktaki ürünler tedarikçiye göre gruplanır</p></div></div><div id="orderSuggestions" class="order-suggestions"></div></article>
         <article class="panel space-top"><div class="panel-head"><h2>Son Alışlar</h2></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Tedarikçi</th><th>Ürün</th><th>Miktar</th><th>Birim Alış</th><th>Toplam</th><th>Ödeme</th><th>Belge</th></tr></thead><tbody id="purchaseTableBody"></tbody></table></div></article>
       </section>
 
@@ -192,7 +208,8 @@
 
       <section class="view" id="cash">
         <div class="kpi-grid small"><article class="kpi"><span>Nakit Kasa</span><strong id="cashBalance">₺0</strong></article><article class="kpi"><span>Kart Tahsilatı</span><strong id="cardTotal">₺0</strong></article><article class="kpi"><span>Banka Tahsilatı</span><strong id="bankTotal">₺0</strong></article><article class="kpi"><span>Toplam Ciro</span><strong id="turnoverTotal">₺0</strong></article></div>
-        <article class="panel space-top"><div class="panel-head"><div><h2>Kasa Hareketleri</h2><p>Gelir, gider, satış ve tahsilatlar</p></div><button class="primary-btn" id="addCashMoveBtn">＋ Kasa Hareketi</button></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Ödeme</th><th>Tutar</th></tr></thead><tbody id="cashTableBody"></tbody></table></div></article>
+        <article class="panel space-top"><div class="panel-head"><div><h2>Kasa Hareketleri</h2><p>Gelir, gider, satış ve tahsilatlar</p></div><div class="toolbar-actions"><button class="ghost-btn" id="dayCloseBtn" type="button">🔒 Gün Sonu (Z)</button><button class="primary-btn" id="addCashMoveBtn">＋ Kasa Hareketi</button></div></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Ödeme</th><th>Tutar</th></tr></thead><tbody id="cashTableBody"></tbody></table></div></article>
+        <article class="panel space-top"><div class="panel-head"><div><h2>Gün Sonu Kayıtları</h2><p>Kasa sayımı ve fark takibi</p></div></div><div class="table-wrap"><table><thead><tr><th>Gün</th><th>Alan</th><th>Satış</th><th>Nakit</th><th>Kart</th><th>Banka</th><th>Veresiye</th><th>Gider</th><th>Beklenen Nakit</th><th>Sayılan</th><th>Fark</th><th></th></tr></thead><tbody id="dayCloseBody"></tbody></table></div></article>
       </section>
 
       <section class="view" id="staff">
@@ -216,16 +233,76 @@
       <section class="view" id="data">
         <div class="grid-2 equal">
           <article class="panel"><div class="panel-head"><div><h2>Yedekleme</h2><p>Tüm ürün, cari, satış ve kasa kayıtları</p></div></div><div class="data-actions"><button class="primary-btn" id="exportBackup">⬇ JSON Yedek Al</button><label class="file-btn">⬆ Yedek Yükle<input id="importBackup" type="file" accept="application/json" /></label></div><p class="hint">Yedek dosyası başka cihazda da içe aktarılabilir.</p></article>
-          <article class="panel"><div class="panel-head"><div><h2>Sistem Bilgisi</h2><p>Bu sürüm cihaz içi prototiptir</p></div></div><div class="info-list"><div><span>Veri depolama</span><b>Tarayıcı LocalStorage</b></div><div><span>Sürüm</span><b>v0.3.5 Personel + Yetkiler + Satış Onayı + Kodla e-Belge</b></div><div><span>Çalışma</span><b>Offline PWA</b></div><div><span>e-Belge entegratörü</span><b>Kodla</b></div><div><span>e-Belge mimarisi</span><b>Nalbur Pro → Güvenli Backend/Worker → Kodla API → GİB</b></div><div><span>Sonraki hedef</span><b>Merkezi kullanıcı girişi + Kodla test API + bulut veritabanı</b></div></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Sistem Bilgisi</h2><p>Bu sürüm cihaz içi prototiptir</p></div></div><div class="info-list"><div><span>Veri depolama</span><b>Tarayıcı LocalStorage</b></div><div><span>Sürüm</span><b>Geçer Nalbur v0.4.0</b></div><div><span>Son yedek</span><b id="lastBackupLabel">—</b></div><div><span>Çalışma</span><b>Offline PWA + Android APK</b></div><div><span>e-Belge entegratörü</span><b>Kodla</b></div><div><span>e-Belge mimarisi</span><b>Nalbur Pro → Güvenli Backend/Worker → Kodla API → GİB</b></div><div><span>Sonraki hedef</span><b>Merkezi kullanıcı girişi + Kodla test API + bulut veritabanı</b></div></div></article>
         </div>
+        <article class="panel space-top"><div class="panel-head"><div><h2>Firma & Fiş Ayarları</h2><p>Fiş, teklif, ekstre ve etiketlerde kullanılır</p></div></div>
+          <form id="settingsForm" class="settings-form"><div class="form-grid">
+            <label>Firma Adı<input name="companyName" required /></label><label>Telefon<input name="companyPhone" /></label>
+            <label class="span-2">Adres<input name="companyAddress" /></label>
+            <label>Vergi Dairesi<input name="companyTaxOffice" /></label><label>VKN / TCKN<input name="companyTaxNo" inputmode="numeric" /></label>
+            <label class="span-2">Fiş Alt Notu<input name="receiptFooter" /></label>
+            <label>Fiş Genişliği<select name="receiptWidth"><option value="58">58 mm termal</option><option value="80">80 mm termal</option><option value="A4">A4</option></select></label>
+            <label>Varsayılan KDV %<select name="defaultVat"><option>0</option><option>1</option><option>10</option><option>20</option></select></label>
+            <label>Usta İndirimi %<input name="groupUsta" type="number" min="0" max="90" step="0.5" /></label><label>Toptan İndirimi %<input name="groupToptan" type="number" min="0" max="90" step="0.5" /></label>
+            <label>Varsayılan Vade (gün)<input name="defaultDueDays" type="number" min="0" step="1" /></label><label>Ölü Stok Eşiği (gün)<input name="deadStockDays" type="number" min="7" step="1" /></label>
+            <label>Teklif Geçerlilik (gün)<input name="quoteDays" type="number" min="1" step="1" /></label><label>Yedek Hatırlatma (gün)<input name="backupReminderDays" type="number" min="1" step="1" /></label>
+          </div><div class="modal-actions"><button class="primary-btn" type="submit">Ayarları Kaydet</button></div></form></article>
         <article class="panel danger-zone space-top"><div><h2>Test Verisine Dön</h2><p>Tüm mevcut cihaz verisini siler ve örnek verileri geri yükler.</p></div><button class="danger-btn" id="resetData">Tüm Veriyi Sıfırla</button></article>
+      </section>
+
+      <section class="view" id="quotes">
+        <div class="kpi-grid small">
+          <article class="kpi"><span>Açık Teklif</span><strong id="quoteOpenCount">0</strong></article>
+          <article class="kpi"><span>Açık Teklif Tutarı</span><strong id="quoteOpenTotal">₺0</strong></article>
+          <article class="kpi"><span>Satışa Dönen</span><strong id="quoteWonCount">0</strong></article>
+          <article class="kpi"><span>Dönüşüm Oranı</span><strong id="quoteRate">%0</strong></article>
+        </div>
+        <article class="panel space-top">
+          <div class="panel-head"><div><h2>Teklif / Proforma</h2><p>Sepetten teklif hazırla, yazdır, WhatsApp ile gönder, onaylanınca satışa çevir</p></div><button class="primary-btn" data-goto="sale" type="button">＋ Sepetten Teklif</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Teklif No</th><th>Tarih</th><th>Müşteri</th><th>Kalem</th><th>Tutar</th><th>Geçerlilik</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="quoteTableBody"></tbody></table></div>
+        </article>
+      </section>
+
+      <section class="view" id="cheques">
+        <div class="kpi-grid small">
+          <article class="kpi"><span>Portföydeki Alınan</span><strong id="chqPortfolio">₺0</strong><small id="chqPortfolioCount">0 evrak</small></article>
+          <article class="kpi danger"><span>7 Gün İçinde Vadesi Gelen</span><strong id="chqDueSoon">₺0</strong><small id="chqDueSoonCount">0 evrak</small></article>
+          <article class="kpi"><span>Ödenecek (Verilen)</span><strong id="chqGiven">₺0</strong><small id="chqGivenCount">0 evrak</small></article>
+          <article class="kpi"><span>Karşılıksız / Protestolu</span><strong id="chqBounced">₺0</strong></article>
+        </div>
+        <article class="panel space-top">
+          <div class="panel-head"><div><h2>Çek & Senet Takibi</h2><p>Müşteriden alınan ve tedarikçiye verilen evraklar, vade takibi</p></div><button class="primary-btn" id="addChequeBtn" type="button">＋ Çek / Senet</button></div>
+          <div class="segmented" id="chequeFilter"><button class="active" data-chq-filter="open" type="button">Bekleyen</button><button data-chq-filter="received" type="button">Alınan</button><button data-chq-filter="given" type="button">Verilen</button><button data-chq-filter="all" type="button">Tümü</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Vade</th><th>Yön</th><th>Tür</th><th>No / Banka</th><th>Cari / Tedarikçi</th><th>Tutar</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="chequeTableBody"></tbody></table></div>
+        </article>
+      </section>
+
+      <section class="view" id="reports">
+        <article class="panel">
+          <div class="toolbar"><div class="segmented" id="reportRange"><button class="active" data-range="today" type="button">Bugün</button><button data-range="week" type="button">7 Gün</button><button data-range="month" type="button">Bu Ay</button><button data-range="lastMonth" type="button">Geçen Ay</button><button data-range="year" type="button">Bu Yıl</button><button data-range="custom" type="button">Özel</button></div>
+          <div class="toolbar-actions"><input type="date" id="reportFrom" /><input type="date" id="reportTo" /><button class="ghost-btn" id="reportPrintBtn" type="button">🖨 Yazdır</button><button class="ghost-btn" id="reportCsvBtn" type="button">CSV</button></div></div>
+        </article>
+        <div class="kpi-grid space-top" id="reportKpis"></div>
+        <div class="grid-2 equal">
+          <article class="panel"><div class="panel-head"><div><h2>Günlük Ciro</h2><p>Seçili dönem</p></div></div><div class="chart" id="reportChart"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Ödeme Dağılımı</h2><p>Tahsilat türlerine göre</p></div></div><div id="reportPayments" class="bar-list"></div></article>
+        </div>
+        <div class="grid-2 equal">
+          <article class="panel"><div class="panel-head"><div><h2>En Çok Satan Ürünler</h2><p>Ciroya göre ilk 10</p></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>Ürün</th><th>Miktar</th><th>Ciro</th><th class="cost-col">Kâr</th></tr></thead><tbody id="reportTopProducts"></tbody></table></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Kategori Satışları</h2><p>Ciro payı</p></div></div><div id="reportCategories" class="bar-list"></div></article>
+        </div>
+        <div class="grid-2 equal">
+          <article class="panel"><div class="panel-head"><div><h2>Personel Performansı</h2><p>Satış danışmanı bazında</p></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>Personel</th><th>İşlem</th><th>Ciro</th><th>Ort. Sepet</th></tr></thead><tbody id="reportStaff"></tbody></table></div></article>
+          <article class="panel"><div class="panel-head"><div><h2>Gider Dağılımı</h2><p>Kasa giderleri (mal alışı hariç)</p></div></div><div id="reportExpenses" class="bar-list"></div></article>
+        </div>
+        <article class="panel space-top"><div class="panel-head"><div><h2>Ölü Stok</h2><p id="deadStockHint">Uzun süredir satılmayan ve stokta bekleyen ürünler</p></div></div><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Kategori</th><th>Stok</th><th>Son Satış</th><th class="cost-col">Bağlı Sermaye</th></tr></thead><tbody id="reportDeadStock"></tbody></table></div></article>
       </section>
     </main>
   </div>
 
-  <dialog id="productDialog"><form method="dialog" id="productForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="productDialogTitle">Yeni Ürün</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ürün Adı<input name="name" required /></label><label>Kategori<input name="category" required /></label><label>Barkod<input name="barcode" /></label><label>Birim<select name="unit"><option>Adet</option><option>Kutu</option><option>Metre</option><option>Kg</option><option>Top</option><option>Litre</option><option>Torba</option><option>Paket</option></select></label><label>Stok<input name="stock" type="number" step="0.01" required /></label><label>Minimum Stok<input name="minStock" type="number" step="0.01" required /></label><label>Alış Fiyatı<input name="buy" type="number" step="0.01" required /></label><label>Satış Fiyatı<input name="sell" type="number" step="0.01" required /></label><label>Raf<input name="shelf" placeholder="A-03-02" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveProduct">Kaydet</button></div></form></dialog>
+  <dialog id="productDialog"><form method="dialog" id="productForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="productDialogTitle">Yeni Ürün</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ürün Adı<input name="name" required /></label><label>Kategori<input name="category" required /></label><label>Barkod<input name="barcode" /></label><label>Birim<select name="unit"><option>Adet</option><option>Kutu</option><option>Metre</option><option>Kg</option><option>Top</option><option>Litre</option><option>Torba</option><option>Paket</option></select></label><label>Stok<input name="stock" type="number" step="0.01" required /></label><label>Minimum Stok<input name="minStock" type="number" step="0.01" required /></label><label>Alış Fiyatı<input name="buy" type="number" step="0.01" required /></label><label>Satış Fiyatı<input name="sell" type="number" step="0.01" required /></label><label>Raf<input name="shelf" placeholder="A-03-02" /></label><label>KDV %<select name="vat"><option>0</option><option>1</option><option>10</option><option selected>20</option></select></label><label>Usta Fiyatı<input name="priceUsta" type="number" step="0.01" min="0" placeholder="Boş: grup indirimi" /></label><label>Toptan Fiyatı<input name="priceToptan" type="number" step="0.01" min="0" placeholder="Boş: grup indirimi" /></label><label>Marka<input name="brand" /></label><label>Varsayılan Tedarikçi<select name="supplierId" id="productSupplier"></select></label></div><p class="modal-note">Fiyatlar KDV dahildir. Usta/Toptan fiyatı boş bırakılırsa ayarlardaki grup indirim oranı uygulanır.</p><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveProduct">Kaydet</button></div></form></dialog>
 
-  <dialog id="cariDialog"><form method="dialog" id="cariForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="cariDialogTitle">Yeni Cari</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ad / Firma<input name="name" required /></label><label>Telefon<input name="phone" /></label><label>Fiyat Grubu<select name="priceGroup"><option>Perakende</option><option>Usta</option><option>Toptan</option></select></label><label>Açılış Bakiyesi<input name="balance" type="number" step="0.01" value="0" /></label><label>VKN / TCKN<input name="taxNo" maxlength="11" inputmode="numeric" /></label><label>Vergi Dairesi<input name="taxOffice" /></label><label>E-posta<input name="email" type="email" /></label><label>e-Fatura Kullanıcısı<select name="eInvoiceUser"><option value="unknown">Entegratörden sorgula</option><option value="yes">Evet</option><option value="no">Hayır</option></select></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCari">Kaydet</button></div></form></dialog>
+  <dialog id="cariDialog"><form method="dialog" id="cariForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="cariDialogTitle">Yeni Cari</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ad / Firma<input name="name" required /></label><label>Telefon<input name="phone" /></label><label>Fiyat Grubu<select name="priceGroup"><option>Perakende</option><option>Usta</option><option>Toptan</option></select></label><label>Açılış Bakiyesi<input name="balance" type="number" step="0.01" value="0" /></label><label>VKN / TCKN<input name="taxNo" maxlength="11" inputmode="numeric" /></label><label>Vergi Dairesi<input name="taxOffice" /></label><label>E-posta<input name="email" type="email" /></label><label>e-Fatura Kullanıcısı<select name="eInvoiceUser"><option value="unknown">Entegratörden sorgula</option><option value="yes">Evet</option><option value="no">Hayır</option></select></label><label>Vade (gün)<input name="dueDays" type="number" min="0" step="1" placeholder="Ayarlardaki varsayılan" /></label><label>Risk / Kredi Limiti<input name="creditLimit" type="number" min="0" step="0.01" placeholder="0 = limitsiz" /></label><label class="span-2">Adres<input name="address" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCari">Kaydet</button></div></form></dialog>
 
   <dialog id="creditSaleDialog"><form method="dialog" id="creditSaleForm" class="modal-form">
     <div class="modal-head"><h2>Veresiye Satış</h2><button value="cancel">✕</button></div>
@@ -241,7 +318,7 @@
 
   <dialog id="invoiceDialog"><form method="dialog" id="invoiceForm" class="modal-form"><div class="modal-head"><h2>Satıştan e-Belge Oluştur</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Satış<select name="saleId" id="invoiceSale" required></select></label><label>Belge Türü<select name="documentType"><option value="AUTO">Otomatik Seç</option><option value="EFATURA">e-Fatura</option><option value="EARSIV">e-Arşiv</option></select></label><label>Senaryo<select name="scenario"><option value="TICARIFATURA">Ticari Fatura</option><option value="TEMELFATURA">Temel Fatura</option></select></label><label>Para Birimi<select name="currency"><option value="TRY">TRY</option></select></label><label class="span-2">Not<input name="note" placeholder="Belge açıklaması (opsiyonel)" /></label></div><p class="modal-note">Otomatik seçim, cari kartındaki e-Fatura bilgisini kullanır. Canlı sistemde bu bilgi özel entegratör üzerinden VKN/TCKN sorgusuyla doğrulanacaktır.</p><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveInvoiceDraft">Taslak Oluştur</button></div></form></dialog>
 
-  <dialog id="cashDialog"><form method="dialog" id="cashForm" class="modal-form"><div class="modal-head"><h2>Kasa Hareketi</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Tür<select name="type"><option>Gelir</option><option>Gider</option></select></label><label>Ödeme<select name="payment"><option>Nakit</option><option>Kart</option><option>Banka</option></select></label><label>Açıklama<input name="description" required /></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCash">Kaydet</button></div></form></dialog>
+  <dialog id="cashDialog"><form method="dialog" id="cashForm" class="modal-form"><div class="modal-head"><h2>Kasa Hareketi</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Tür<select name="type" id="cashType"><option>Gelir</option><option>Gider</option></select></label><label id="cashCategoryLabel">Kategori<select name="category" id="cashCategory"></select></label><label>Ödeme<select name="payment"><option>Nakit</option><option>Kart</option><option>Banka</option></select></label><label>Açıklama<input name="description" required /></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCash">Kaydet</button></div></form></dialog>
 
   <dialog id="stockDialog"><form method="dialog" id="stockForm" class="modal-form"><div class="modal-head"><h2>Stok Düzeltme</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ürün<select name="productId" id="adjustProduct" required></select></label><label>İşlem<select name="mode"><option value="in">Stok Ekle</option><option value="out">Stok Düş</option><option value="set">Stoku Sabitle</option></select></label><label>Miktar<input name="qty" type="number" min="0" step="0.01" required /></label><label>Açıklama<input name="note" placeholder="Sayım farkı, fire vb." required /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveStockAdjust">Kaydet</button></div></form></dialog>
 
@@ -249,21 +326,21 @@
 
   <dialog id="supplierPaymentDialog"><form method="dialog" id="supplierPaymentForm" class="modal-form"><input type="hidden" name="supplierId" /><div class="modal-head"><h2>Tedarikçi Ödemesi</h2><button value="cancel">✕</button></div><p id="supplierPaymentName" class="modal-note"></p><div class="form-grid"><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme<select name="payment"><option>Nakit</option><option>Banka</option><option>Kart</option></select></label><label class="span-2">Açıklama<input name="note" value="Tedarikçi ödemesi" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveSupplierPayment">Ödeme Kaydet</button></div></form></dialog>
 
-  <dialog id="saleDetailDialog"><div class="modal-form"><div class="modal-head"><h2>Satış Detayı</h2><button id="closeSaleDetail">✕</button></div><div id="saleDetailContent"></div><div class="modal-actions sale-detail-actions"><button class="danger-btn" id="deleteSaleFromDetail" type="button">Satışı Sil / Geri Al</button><button class="ghost-btn" id="closeSaleDetailBottom" type="button">Kapat</button></div></div></dialog>
+  <dialog id="saleDetailDialog"><div class="modal-form"><div class="modal-head"><h2>Satış Detayı</h2><button id="closeSaleDetail">✕</button></div><div id="saleDetailContent"></div><div class="modal-actions sale-detail-actions wrap"><button class="ghost-btn" id="printSaleReceipt" type="button">🖨 Fiş</button><button class="ghost-btn" id="shareSaleReceipt" type="button">📤 Paylaş</button><button class="ghost-btn" id="returnSaleBtn" type="button">↩ İade Al</button><button class="danger-btn" id="deleteSaleFromDetail" type="button">Satışı Sil / Geri Al</button><button class="ghost-btn" id="closeSaleDetailBottom" type="button">Kapat</button></div></div></dialog>
 
   <dialog id="saleConfirmDialog"><div class="modal-form sale-confirm-modal"><div class="modal-head"><div><h2>İşlem Özeti</h2><p>Satışı onaylamadan önce son kontrol</p></div><button id="closeSaleConfirm" type="button">✕</button></div><div id="saleConfirmContent"></div><div class="sale-confirm-warning">Bu ekrandaki bilgileri kontrol et. “Onayla ve Satışı Tamamla” demeden stok, kasa veya cari hesabına işlem yapılmaz.</div><div class="modal-actions"><button class="ghost-btn" id="cancelFinalSale" type="button">Geri Dön</button><button class="primary-btn" id="confirmFinalSale" type="button">✓ Onayla ve Satışı Tamamla</button></div></div></dialog>
 
   <dialog id="staffDialog"><form method="dialog" id="staffForm" class="modal-form"><input type="hidden" name="id" /><div class="modal-head"><h2 id="staffDialogTitle">Personel Ekle</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Ad Soyad<input name="name" required /></label><label>Telefon<input name="phone" /></label><label>Görev / Departman<input name="department" placeholder="Satış, Kasa, Depo..." /></label><label>İşe Giriş<input name="hireDate" type="date" /></label><label>Aylık Net Maaş<input name="salary" type="number" min="0" step="0.01" value="0" /></label><label>Yıllık İzin Hakkı (Gün)<input name="annualLeave" type="number" min="0" step="1" value="14" /></label><label>Kullanıcı Adı<input name="username" required autocomplete="off" /></label><label>PIN / Şifre<input name="pin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="En az 4 hane" /></label><label>Rol<select name="role" id="staffRole"><option value="sales">Satış Danışmanı</option><option value="admin">Yönetici</option></select></label><label class="toggle-label"><input name="active" type="checkbox" checked /> Personel / kullanıcı aktif</label></div><div class="permission-block"><div class="permission-head"><h3>Program İşlem Yetkileri</h3><button class="ghost-btn compact-btn" type="button" id="applySellerDefaults">Danışman Varsayılanı</button></div><div class="permission-grid" id="permissionGrid">
-    <label><input type="checkbox" name="perm_sale" /> Hızlı satış</label><label><input type="checkbox" name="perm_viewOwnSales" /> Kendi satışlarını gör</label><label><input type="checkbox" name="perm_viewAllSales" /> Tüm satışları gör</label><label><input type="checkbox" name="perm_deleteSales" /> Satış sil / geri al</label><label><input type="checkbox" name="perm_creditSale" /> Veresiye satış</label><label><input type="checkbox" name="perm_viewProducts" /> Ürün / stok görüntüle</label><label><input type="checkbox" name="perm_editProducts" /> Ürün ekle / düzenle</label><label><input type="checkbox" name="perm_stockAdjust" /> Stok düzeltme</label><label><input type="checkbox" name="perm_viewCaris" /> Cari görüntüle</label><label><input type="checkbox" name="perm_editCaris" /> Cari ekle / düzenle</label><label><input type="checkbox" name="perm_collectCari" /> Cari tahsilat</label><label><input type="checkbox" name="perm_purchases" /> Alış / tedarikçi</label><label><input type="checkbox" name="perm_cash" /> Kasa</label><label><input type="checkbox" name="perm_invoices" /> e-Belge</label><label><input type="checkbox" name="perm_staff" /> Personel yönetimi</label><label><input type="checkbox" name="perm_data" /> Yedek / ayarlar</label>
+    <label><input type="checkbox" name="perm_sale" /> Hızlı satış</label><label><input type="checkbox" name="perm_viewOwnSales" /> Kendi satışlarını gör</label><label><input type="checkbox" name="perm_viewAllSales" /> Tüm satışları gör</label><label><input type="checkbox" name="perm_deleteSales" /> Satış sil / geri al</label><label><input type="checkbox" name="perm_creditSale" /> Veresiye satış</label><label><input type="checkbox" name="perm_viewProducts" /> Ürün / stok görüntüle</label><label><input type="checkbox" name="perm_editProducts" /> Ürün ekle / düzenle</label><label><input type="checkbox" name="perm_stockAdjust" /> Stok düzeltme</label><label><input type="checkbox" name="perm_viewCaris" /> Cari görüntüle</label><label><input type="checkbox" name="perm_editCaris" /> Cari ekle / düzenle</label><label><input type="checkbox" name="perm_collectCari" /> Cari tahsilat</label><label><input type="checkbox" name="perm_purchases" /> Alış / tedarikçi</label><label><input type="checkbox" name="perm_cash" /> Kasa</label><label><input type="checkbox" name="perm_invoices" /> e-Belge</label><label><input type="checkbox" name="perm_staff" /> Personel yönetimi</label><label><input type="checkbox" name="perm_data" /> Yedek / ayarlar</label><label><input type="checkbox" name="perm_discount" /> İskonto / fiyat değiştir</label><label><input type="checkbox" name="perm_returns" /> İade al</label><label><input type="checkbox" name="perm_quotes" /> Teklif hazırla</label><label><input type="checkbox" name="perm_cheques" /> Çek / senet</label><label><input type="checkbox" name="perm_reports" /> Raporlar</label><label><input type="checkbox" name="perm_dayClose" /> Gün sonu (Z)</label>
   </div></div><p class="modal-note">Yönetici rolünde tüm yetkiler otomatik açıktır. Satış danışmanında yalnızca seçtiğin işlemler kullanılabilir.</p><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveStaff">Kaydet</button></div></form></dialog>
 
-  <dialog id="payrollDialog"><form method="dialog" id="payrollForm" class="modal-form"><div class="modal-head"><h2>Maaş / Avans Hareketi</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Personel<select name="staffId" id="payrollStaff" required></select></label><label>İşlem<select name="type"><option>Avans</option><option>Maaş Ödemesi</option><option>Prim</option><option>Kesinti</option></select></label><label>Tarih<input name="date" type="date" required /></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme Yöntemi<select name="payment"><option>Nakit</option><option>Banka</option><option>Kart</option><option>Diğer</option></select></label><label>Açıklama<input name="note" placeholder="Eylül avansı vb." /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="savePayroll">Kaydet</button></div></form></dialog>
+  <dialog id="payrollDialog"><form method="dialog" id="payrollForm" class="modal-form"><div class="modal-head"><h2>Maaş / Avans Hareketi</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Personel<select name="staffId" id="payrollStaff" required></select></label><label>İşlem<select name="type"><option>Avans</option><option>Maaş Ödemesi</option><option>Prim</option><option>Kesinti</option></select></label><label>Tarih<input name="date" type="date" required /></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Ödeme Yöntemi<select name="payment"><option>Nakit</option><option>Banka</option><option>Kart</option><option>Diğer</option></select></label><label>Açıklama<input name="note" placeholder="Eylül avansı vb." /></label><label class="toggle-label span-2"><input name="fromCash" type="checkbox" checked /> Kasadan / bankadan çıkış olarak işle (Prim ve Kesinti hariç)</label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="savePayroll">Kaydet</button></div></form></dialog>
 
   <dialog id="leaveDialog"><form method="dialog" id="leaveForm" class="modal-form"><div class="modal-head"><h2>İzin Kaydı</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Personel<select name="staffId" id="leaveStaff" required></select></label><label>İzin Türü<select name="type"><option>Yıllık İzin</option><option>Mazeret İzni</option><option>Rapor</option><option>Ücretsiz İzin</option><option>Diğer</option></select></label><label>Başlangıç<input name="startDate" type="date" required /></label><label>Bitiş<input name="endDate" type="date" required /></label><label>Gün<input name="days" id="leaveDays" type="number" min="0.5" step="0.5" required /></label><label>Durum<select name="status"><option>Onaylandı</option><option>Bekliyor</option><option>Reddedildi</option></select></label><label class="span-2">Açıklama<input name="note" placeholder="İzin açıklaması" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveLeave">Kaydet</button></div></form></dialog>
 
   <dialog id="scannerDialog"><div class="modal-form scanner-modal"><div class="modal-head"><h2>Barkod Tara</h2><button id="closeScanner">✕</button></div><video id="scannerVideo" autoplay playsinline muted></video><p id="scannerStatus" class="hint">Kamera hazırlanıyor…</p><button id="manualBarcode" class="ghost-btn wide">Barkodu Elle Gir</button></div></dialog>
 
-  <div id="loginScreen" class="login-screen" aria-hidden="true"><div class="login-card"><div class="login-brand"><div class="brand-mark">NP</div><div><h1>Nalbur Pro</h1><p>Kullanıcı Girişi</p></div></div><form id="loginForm"><label>Kullanıcı Adı<input id="loginUsername" name="username" autocomplete="username" required /></label><label>PIN / Şifre<input id="loginPin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label><button class="primary-btn wide" type="submit">Giriş Yap</button></form><p id="loginError" class="login-error"></p><small class="login-hint">İlk yönetici: <b>ufuk</b> • PIN: <b>1234</b>. İlk girişten sonra Kullanıcılar bölümünden PIN'i değiştir.</small></div></div>
+  <div id="loginScreen" class="login-screen" aria-hidden="true"><div class="login-card"><div class="login-brand"><img class="brand-logo lg" src="icons/logo-mark.svg" alt="" width="56" height="56" /><div><h1>Geçer Nalbur</h1><p>Kullanıcı Girişi</p></div></div><form id="loginForm"><label>Kullanıcı Adı<input id="loginUsername" name="username" autocomplete="username" required /></label><label>PIN / Şifre<input id="loginPin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label><button class="primary-btn wide" type="submit">Giriş Yap</button></form><p id="loginError" class="login-error"></p><small class="login-hint" id="loginHint">İlk yönetici: <b>ufuk</b> • PIN: <b>1234</b>. İlk girişten sonra Personel & Yetkiler bölümünden PIN'i değiştir.</small></div></div>
 
   <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobil ana menü">
     <button class="mobile-nav-btn active" data-mobile-view="dashboard" type="button"><span>⌂</span><small>Ana Sayfa</small></button>
@@ -273,7 +350,35 @@
     <button class="mobile-nav-btn" id="mobileMoreBtn" type="button"><span>☰</span><small>Diğer</small></button>
   </nav>
 
+
+  <dialog id="lineEditDialog"><form method="dialog" id="lineEditForm" class="modal-form"><input type="hidden" name="productId" /><div class="modal-head"><h2 id="lineEditTitle">Satır Düzenle</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Miktar<input name="qty" type="number" min="0.01" step="0.01" required /></label><label>Birim Fiyat (KDV dahil)<input name="price" type="number" min="0" step="0.01" required /></label><label>Satır İndirimi %<input name="disc" type="number" min="0" max="100" step="0.5" value="0" /></label><label>Satır Toplamı<input name="lineTotal" readonly /></label></div><p class="modal-note" id="lineEditNote"></p><div class="modal-actions"><button class="danger-btn" id="removeLineBtn" type="button">Satırı Sil</button><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveLineEdit">Uygula</button></div></form></dialog>
+
+  <dialog id="cartDiscountDialog"><form method="dialog" id="cartDiscountForm" class="modal-form"><div class="modal-head"><h2>Sepet İskontosu</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Tür<select name="type"><option value="pct">Yüzde (%)</option><option value="amt">Tutar (₺)</option><option value="round">Toplamı yuvarla (₺)</option></select></label><label>Değer<input name="value" type="number" min="0" step="0.01" required /></label></div><p class="modal-note">“Toplamı yuvarla” seçilirse girilen tutar yeni sepet toplamı olur (ör. 1.437,50 → 1.400).</p><div class="modal-actions"><button class="ghost-btn" id="clearCartDiscount" type="button">İskontoyu Kaldır</button><button value="default" class="primary-btn" id="saveCartDiscount">Uygula</button></div></form></dialog>
+
+  <dialog id="splitPayDialog"><form method="dialog" id="splitPayForm" class="modal-form"><div class="modal-head"><h2>Parçalı Ödeme</h2><button value="cancel">✕</button></div><p class="modal-note">Sepet toplamı: <b id="splitTotal">₺0</b> • Kalan: <b id="splitRemaining">₺0</b></p><div class="form-grid"><label>💵 Nakit<input name="Nakit" type="number" min="0" step="0.01" value="0" /></label><label>💳 Kart<input name="Kart" type="number" min="0" step="0.01" value="0" /></label><label>🏦 Banka / Havale<input name="Banka" type="number" min="0" step="0.01" value="0" /></label><label>🧾 Veresiye (cariye)<input name="Veresiye" type="number" min="0" step="0.01" value="0" /></label><label class="span-2">Veresiye Carisi<select name="cariId" id="splitCari"></select></label></div><div class="modal-actions"><button class="ghost-btn" id="splitFillCash" type="button">Kalanı Nakite Yaz</button><button value="default" class="primary-btn" id="saveSplitPay">Devam</button></div></form></dialog>
+
+  <dialog id="saleDoneDialog"><div class="modal-form sale-done"><div class="sale-done-icon">✓</div><h2>Satış Tamamlandı</h2><p id="saleDoneText"></p><div class="modal-actions wrap center"><button class="ghost-btn" id="saleDonePrint" type="button">🖨 Fiş Yazdır</button><button class="ghost-btn" id="saleDoneShare" type="button">📤 WhatsApp / Paylaş</button><button class="primary-btn" id="saleDoneClose" type="button">Yeni Satış</button></div></div></dialog>
+
+  <dialog id="returnDialog"><form method="dialog" id="returnForm" class="modal-form"><div class="modal-head"><div><h2>Satış İadesi</h2><p id="returnSaleInfo"></p></div><button value="cancel">✕</button></div><div id="returnLines" class="return-lines"></div><div class="form-grid"><label>İade Yöntemi<select name="method" id="returnMethod"><option>Nakit</option><option>Kart</option><option>Banka</option><option value="Cari">Cari hesaba alacak</option></select></label><label>Açıklama<input name="note" placeholder="Hasarlı, yanlış ürün vb." /></label></div><div class="sale-confirm-total"><span>İade Tutarı</span><strong id="returnTotal">₺0</strong></div><div class="modal-actions"><button value="cancel" class="ghost-btn">Vazgeç</button><button value="default" class="primary-btn" id="saveReturn">İadeyi Kaydet</button></div></form></dialog>
+
+  <dialog id="parkedDialog"><div class="modal-form"><div class="modal-head"><h2>Bekleyen Sepetler</h2><button id="closeParked" type="button">✕</button></div><div id="parkedList" class="parked-list"></div></div></dialog>
+
+  <dialog id="bulkPriceDialog"><form method="dialog" id="bulkPriceForm" class="modal-form"><div class="modal-head"><h2>Toplu Fiyat Güncelle</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Kapsam<select name="scope" id="bulkScope"></select></label><label>Alan<select name="field"><option value="sell">Satış fiyatı</option><option value="buy">Alış fiyatı</option><option value="both">Alış + Satış</option><option value="margin">Satışı alışa göre kâr marjıyla hesapla</option></select></label><label>Oran %<input name="pct" type="number" step="0.1" required placeholder="ör. 12,5 veya -5" /></label><label>Yuvarlama<select name="round"><option value="0">Yok (kuruş)</option><option value="0.5">0,50 ₺</option><option value="1">1 ₺</option><option value="5">5 ₺</option><option value="10">10 ₺</option></select></label></div><p class="modal-note" id="bulkPreview">Zam/indirim oranını gir. “Kâr marjı” seçilirse satış = alış × (1 + oran).</p><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveBulkPrice">Uygula</button></div></form></dialog>
+
+  <dialog id="labelDialog"><form method="dialog" id="labelForm" class="modal-form"><div class="modal-head"><h2>Raf / Barkod Etiketi</h2><button value="cancel">✕</button></div><div class="toolbar"><div class="search-row grow"><input id="labelSearch" placeholder="Ürün ara..." /></div><select id="labelSize"><option value="shelf">Raf etiketi (fiyat büyük)</option><option value="small">Küçük barkod etiketi</option></select></div><div id="labelList" class="label-list"></div><div class="modal-actions"><button class="ghost-btn" id="labelCritical" type="button">Fiyatı değişenleri seç</button><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="printLabels">🖨 Yazdır</button></div></form></dialog>
+
+  <dialog id="multiPurchaseDialog"><form method="dialog" id="multiPurchaseForm" class="modal-form wide-modal"><div class="modal-head"><h2>Çok Kalemli Alış Faturası</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Tedarikçi<select name="supplierId" id="mpSupplier" required></select></label><label>Fatura / İrsaliye No<input name="documentNo" /></label><label>Ödeme<select name="payment"><option>Veresiye</option><option>Nakit</option><option>Banka</option><option>Kart</option></select></label><label>Tarih<input name="date" type="date" required /></label></div><div class="mp-search"><input id="mpSearch" placeholder="Ürün adı / barkod ile satır ekle..." autocomplete="off" /><div id="mpSearchResults" class="mp-results"></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Alış</th><th>Yeni Satış</th><th>Toplam</th><th></th></tr></thead><tbody id="mpLines"></tbody></table></div><div class="sale-confirm-total"><span>Fatura Toplamı</span><strong id="mpTotal">₺0</strong></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveMultiPurchase">Faturayı Kaydet</button></div></form></dialog>
+
+  <dialog id="chequeDialog"><form method="dialog" id="chequeForm" class="modal-form"><div class="modal-head"><h2>Çek / Senet Kaydı</h2><button value="cancel">✕</button></div><div class="form-grid"><label>Yön<select name="direction" id="chqDirection"><option value="received">Müşteriden alınan</option><option value="given">Tedarikçiye verilen</option></select></label><label>Tür<select name="kind"><option>Çek</option><option>Senet</option></select></label><label id="chqPartyLabel">Cari<select name="partyId" id="chqParty" required></select></label><label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Vade Tarihi<input name="dueDate" type="date" required /></label><label>Evrak No<input name="no" /></label><label>Banka / Şube<input name="bank" /></label><label>Keşideci / Borçlu<input name="drawer" /></label><label class="toggle-label span-2"><input name="affectBalance" type="checkbox" checked /> Cari / tedarikçi bakiyesine şimdi işle</label><label class="span-2">Açıklama<input name="note" /></label></div><div class="modal-actions"><button value="cancel" class="ghost-btn">İptal</button><button value="default" class="primary-btn" id="saveCheque">Kaydet</button></div></form></dialog>
+
+  <dialog id="statementDialog"><div class="modal-form wide-modal"><div class="modal-head"><div><h2 id="statementTitle">Cari Ekstre</h2><p id="statementSub"></p></div><button id="closeStatement" type="button">✕</button></div><div id="statementContent"></div><div class="modal-actions wrap"><button class="ghost-btn" id="statementWhatsapp" type="button">💬 WhatsApp Hatırlat</button><button class="ghost-btn" id="statementShare" type="button">📤 Paylaş</button><button class="primary-btn" id="statementPrint" type="button">🖨 Yazdır</button></div></div></dialog>
+
+  <dialog id="dayCloseDialog"><form method="dialog" id="dayCloseForm" class="modal-form"><div class="modal-head"><div><h2>Gün Sonu (Z Raporu)</h2><p id="dayCloseDate"></p></div><button value="cancel">✕</button></div><div id="dayCloseSummary"></div><div class="form-grid"><label>Sayılan Nakit (kasadaki para)<input name="counted" type="number" min="0" step="0.01" required /></label><label>Fark<input name="diff" readonly /></label><label class="span-2">Not<input name="note" placeholder="Bankaya yatırılan, sonraki güne devreden vb." /></label></div><div class="modal-actions"><button class="ghost-btn" id="dayClosePrint" type="button">🖨 Yazdır</button><button value="default" class="primary-btn" id="saveDayClose">Gün Sonunu Kaydet</button></div></form></dialog>
+
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=035"></script>
+  <script src="app.js?v=040"></script>
+  <script src="app-v40.js?v=040"></script>
 </body>
 </html>
