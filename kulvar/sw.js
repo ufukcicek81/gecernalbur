@@ -1,7 +1,7 @@
 /* Kulvar service worker: çevrimdışı önbellek ve bildirim tıklaması. */
-const CACHE = 'kulvar-v1.1.0';
+const CACHE = 'kulvar-v1.2.0';
 const ASSETS = [
-  './', './index.html', './styles.css', './data.js', './app.js', './manifest.webmanifest',
+  './', './index.html', './styles.css', './data.js', './app.js', './manifest.webmanifest', './data/sonuclar.json',
   './icons/logo.svg', './icons/logo-dark.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/favicon-32.png', './icons/apple-touch-icon.png'
 ];
 

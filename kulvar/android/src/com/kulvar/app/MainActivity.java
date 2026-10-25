@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(true);
         s.setTextZoom(100);
-        s.setUserAgentString(s.getUserAgentString() + " KulvarAndroid/1.1.0");
+        s.setUserAgentString(s.getUserAgentString() + " KulvarAndroid/1.2.0");
 
         webView.addJavascriptInterface(new Bridge(), "KulvarAndroid");
         webView.setWebViewClient(new AssetClient());

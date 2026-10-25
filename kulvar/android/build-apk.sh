@@ -22,6 +22,7 @@ rm -rf build && mkdir -p build/assets/www build/gen build/classes build/signer "
 # 1) Web uygulamasını assets/www içine kopyala
 cp "$ROOT"/index.html "$ROOT"/app.js "$ROOT"/data.js "$ROOT"/styles.css "$ROOT"/manifest.webmanifest build/assets/www/
 cp -r "$ROOT"/icons build/assets/www/icons
+cp -r "$ROOT"/data build/assets/www/data
 
 # 2) Kaynakları derle ve bağla
 "$TOOLS/aapt2" compile --dir res -o build/res.zip

@@ -17,7 +17,16 @@
 
   let db = load(DB_KEY);
   if (!db || !db.swimmers) { db = D.generateDemo(); save(DB_KEY, db); }
-  const user = Object.assign({ follows: [], notifications: [], bannerDismissed: false, seq: 0 }, load(USER_KEY) || {});
+  if (db.version === 1) migrateV1(db);
+  const user = Object.assign({ follows: [], notifications: [], bannerDismissed: false, seq: 0, sync: {} }, load(USER_KEY) || {});
+
+  // v1 kayıtlarında kaynak alanı yoktu: demo kayıtlarını kimlik biçiminden tanı
+  function migrateV1(d) {
+    const mark = function (list, re) { list.forEach(function (x) { if (x.demo || re.test(x.id)) x.src = 'demo'; delete x.demo; }); };
+    mark(d.clubs, /^c\d$/); mark(d.swimmers, /^s\d+$/); mark(d.meets, /^m\d+$/); mark(d.results, /^r\d+$/); mark(d.records || [], /^wr\d+$/);
+    d.version = 2;
+    save(DB_KEY, d);
+  }
 
   function saveDb() { save(DB_KEY, db); reindex(); }
   function saveUser() { save(USER_KEY, user); updateBell(); }
@@ -188,6 +197,7 @@
       return '<button aria-label="Haber ' + (i + 1) + '"' + (i === 0 ? ' class="on"' : '') + ' data-dot="' + i + '"></button>';
     }).join('') + '</div>';
 
+    if (!hasRemoteData()) html += '<p class="note">Sunucuda henüz resmi sonuç yok; örnek (demo) veriler gösteriliyor. Gerçek sonuçlar eklendiğinde otomatik gelir.</p>';
     html += '<div class="section-head"><span class="crown-badge">' + ICON.crown + '</span><h3>Popüler Menüler</h3>' +
       '<button class="icon-btn soft" data-action="toggle-menu-mode" aria-label="Görünümü değiştir">' + (listMode ? ICON.grid : ICON.list) + '</button></div>';
     html += '<div class="' + (listMode ? 'menu-list' : 'menu-grid') + '">' + MENUS.map(function (m) {
@@ -615,6 +625,7 @@
         perm === 'denied' ? '<p class="muted">Bildirim izni cihaz ayarlarından engellenmiş. Ayarlar → Uygulamalar → Kulvar → Bildirimler bölümünden açabilirsiniz.</p>' :
           '<button class="btn" data-action="enable-notif">Bildirimleri aç</button>') + '</div>' +
       '<div class="section-head"><h3>Takip Ettiklerim (' + followed.length + ')</h3></div>' + (followed.length ? swimmerList(followed) : '<p class="muted pad">Sporcu sayfasındaki yıldız ile takip edin.</p>') +
+      syncCard() +
       '<div class="section-head"><h3>Veri Yönetimi</h3></div><div class="list">' +
       '<button class="list-item" data-action="add-meet"><div class="grow"><b>Yarış ekle</b><small>Ad, şehir, tarih, havuz</small></div>' + ICON.chev + '</button>' +
       '<button class="list-item" data-action="add-result"><div class="grow"><b>Sonuç ekle</b><small>Tek tek derece girişi</small></div>' + ICON.chev + '</button>' +
@@ -624,8 +635,8 @@
       '<button class="list-item" data-action="export-json"><div class="grow"><b>Yedek al</b><small>Tüm veriyi JSON olarak indir</small></div>' + ICON.chev + '</button>' +
       '<label class="list-item"><div class="grow"><b>Yedekten geri yükle</b></div>' + ICON.chev + '<input type="file" accept=".json,application/json" data-action="import-json" hidden></label>' +
       '<button class="list-item" data-action="clear-demo"><div class="grow"><b>Demo verisini sil</b><small>Örnek sporcuları ve yarışları kaldırır; kendi verileriniz kalır</small></div>' + ICON.chev + '</button>' +
-      '<button class="list-item danger" data-action="reset"><div class="grow"><b>Demo verisine sıfırla</b><small>Tüm veriler silinir</small></div>' + ICON.chev + '</button></div>' +
-      '<p class="muted pad center">Kulvar v1.1.0 · ' + db.swimmers.length + ' sporcu · ' + db.meets.length + ' yarış · ' + db.results.length + ' derece</p>';
+      '<button class="list-item danger" data-action="reset"><div class="grow"><b>Sıfırla</b><small>Elle eklenen veriler silinir, sunucudan yeniden yüklenir</small></div>' + ICON.chev + '</button></div>' +
+      '<p class="muted pad center">Kulvar v1.2.0 · ' + db.swimmers.length + ' sporcu · ' + db.meets.length + ' yarış · ' + db.results.length + ' derece</p>';
   };
 
   function pageTitle(t, sub, action) {
@@ -797,23 +808,16 @@
     },
     'import-csv': function (el) { readFile(el, importCsv); },
     'clear-demo': function () {
-      if (!confirm('Demo sporcular, yarışlar ve dereceleri silinsin mi? Eklediğiniz veriler korunur.')) return;
-      const demoSw = {}, demoMeet = {};
-      db.swimmers.forEach(function (s) { if (s.demo) demoSw[s.id] = 1; });
-      db.meets.forEach(function (m) { if (/^m\d+$/.test(m.id)) demoMeet[m.id] = 1; });
-      db.results = db.results.filter(function (r) { return !demoSw[r.swimmerId] && !demoMeet[r.meetId]; });
-      db.swimmers = db.swimmers.filter(function (s) { return !demoSw[s.id]; });
-      db.meets = db.meets.filter(function (m) { return !demoMeet[m.id]; });
-      const usedClubs = {};
-      db.swimmers.forEach(function (s) { usedClubs[s.clubId] = 1; });
-      db.clubs = db.clubs.filter(function (c) { return usedClubs[c.id] || !/^c\d$/.test(c.id); });
-      user.follows = user.follows.filter(function (id) { return !demoSw[id]; });
-      saveDb(); saveUser(); toast('Demo verisi silindi'); render();
+      if (!confirm('Demo sporcular, yarışlar ve dereceleri silinsin mi? Diğer veriler korunur.')) return;
+      removeDemo();
+      saveDb(); dropMissingFollows(); toast('Demo verisi silindi'); render();
     },
+    'sync-now': function () { syncRemote(true); },
     'reset': function () {
-      if (!confirm('Tüm veriler silinip demo verisi yüklensin mi?')) return;
-      db = D.generateDemo(); user.follows = []; user.notifications = [];
+      if (!confirm('Tüm veriler silinip yeniden yüklensin mi?')) return;
+      db = D.generateDemo(); user.follows = []; user.notifications = []; user.sync = {};
       saveDb(); saveUser(); toast('Sıfırlandı'); location.hash = '#/';
+      syncRemote(false);
     }
   };
 
@@ -1116,6 +1120,124 @@
     toastTimer = setTimeout(function () { t.hidden = true; }, ms || 2500);
   }
 
+  // ---------- Otomatik veri (sunucu) ----------
+  const SYNC_EVERY = 10 * 60 * 1000;
+  let syncing = false;
+
+  function hasRemoteData() { return db.results.some(function (r) { return r.src === 'remote'; }); }
+  function fdatetime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return fdate(iso.slice(0, 10)) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function syncCard() {
+    const s = user.sync || {};
+    const remote = hasRemoteData();
+    const counts = { m: 0, r: 0 };
+    db.meets.forEach(function (m) { if (m.src === 'remote') counts.m++; });
+    db.results.forEach(function (r) { if (r.src === 'remote') counts.r++; });
+    return '<div class="card"><div class="card-head"><b>Otomatik Veri</b><span class="tag">' + (remote ? 'Resmi veri' : 'Demo veri') + '</span></div>' +
+      '<p>' + (remote ? counts.m + ' yarış · ' + counts.r + ' derece. Uygulama açıldığında sunucudan kendiliğinden güncellenir.'
+        : 'Sunucuda henüz resmi sonuç yok; örnek veriler gösteriliyor. Sonuçlar eklendiğinde demo veriler kendiliğinden kalkar.') + '</p>' +
+      '<div class="kv"><span>Veri tarihi</span><b>' + fdatetime(s.updatedAt) + '</b></div>' +
+      '<div class="kv"><span>Son kontrol</span><b>' + fdatetime(s.checkedAt) + '</b></div>' +
+      (s.error ? '<p class="muted small">Son deneme başarısız: internet bağlantısı yok veya sunucuya ulaşılamadı.</p>' : '') +
+      '<button class="btn wide" data-action="sync-now">' + (syncing ? 'Güncelleniyor…' : 'Şimdi güncelle') + '</button></div>';
+  }
+
+  function fetchJson(url) {
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 12000);
+    const u = /^https?:/.test(url) ? url + '?t=' + Date.now() : url;
+    return fetch(u, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { clearTimeout(timer); return d; }, function (e) { clearTimeout(timer); throw e; });
+  }
+
+  function firstAvailable(urls, i) {
+    if (i >= urls.length) return Promise.reject(new Error('erişilemedi'));
+    return fetchJson(urls[i]).then(function (d) {
+      if (!d || d.app !== 'kulvar' || !Array.isArray(d.results) || !d.updatedAt) throw new Error('biçim');
+      return d;
+    }).catch(function () { return firstAvailable(urls, i + 1); });
+  }
+
+  function syncRemote(manual) {
+    if (syncing) return;
+    syncing = true;
+    if (manual) render();
+    firstAvailable(D.REMOTE_URLS, 0).then(function (d) {
+      const s = user.sync = user.sync || {};
+      s.checkedAt = new Date().toISOString(); s.error = '';
+      // Aynı ya da daha eski sürüm (ör. çevrimdışıyken uygulamayla gelen kopya) uygulanmaz
+      if (d.version === s.version || (s.updatedAt && d.updatedAt < s.updatedAt)) {
+        if (manual) toast('Veriler güncel');
+        return;
+      }
+      const added = applyRemote(d);
+      s.version = d.version; s.updatedAt = d.updatedAt;
+      if (manual || added) toast(added ? added + ' yeni derece geldi' : 'Veriler güncellendi');
+    }).catch(function () {
+      user.sync = Object.assign(user.sync || {}, { checkedAt: new Date().toISOString(), error: 'offline' });
+      if (manual) toast('Güncellenemedi: internet bağlantısını kontrol edin');
+    }).then(function () {
+      syncing = false;
+      saveUser();
+      render();
+    });
+  }
+
+  // Sunucu verisini yerleştirir; elle eklenen kayıtlar korunur. Dönen değer: yeni derece sayısı.
+  function applyRemote(d) {
+    const prev = {};
+    db.results.forEach(function (r) { if (r.src === 'remote') prev[r.id] = 1; });
+    const hadRemote = Object.keys(prev).length > 0;
+    const real = d.results.length > 0;
+    const keep = function (x) { return x.src !== 'remote' && !(real && x.src === 'demo'); };
+    const tag = function (x) { return Object.assign({}, x, { src: 'remote' }); };
+    db.clubs = db.clubs.filter(keep).concat((d.clubs || []).map(tag));
+    db.swimmers = db.swimmers.filter(keep).concat((d.swimmers || []).map(tag));
+    db.meets = db.meets.filter(keep).concat((d.meets || []).map(tag));
+    db.results = db.results.filter(keep).concat(d.results.map(tag));
+    const recs = d.records || [];
+    db.records = db.records.filter(function (r) {
+      if (r.src === 'remote') return false;
+      return !(r.src === 'demo' && recs.some(function (x) { return x.scope === r.scope; }));
+    }).concat(recs.map(tag));
+    saveDb();
+    dropMissingFollows();
+    const fresh = db.results.filter(function (r) { return r.src === 'remote' && !prev[r.id]; });
+    if (hadRemote) {
+      const mine = fresh.filter(function (r) { return user.follows.indexOf(r.swimmerId) >= 0; });
+      mine.slice(0, 10).forEach(function (r) { notifyResult(r, isPbAmong(r)); });
+      if (mine.length > 10) pushNotification('Takip ettiklerinize ' + mine.length + ' yeni derece', 'Ayrıntılar için sporcu sayfalarına bakın', '#/profile');
+    }
+    return hadRemote ? fresh.length : 0;
+  }
+
+  function isPbAmong(r) {
+    const pool = idx.meet[r.meetId].pool;
+    const others = idx.bySwimmer[r.swimmerId].filter(function (x) { return x !== r && x.event === r.event && idx.meet[x.meetId].pool === pool; });
+    return others.length > 0 && others.every(function (x) { return r.time < x.time; });
+  }
+
+  function removeDemo() {
+    const demo = function (x) { return x.src !== 'demo'; };
+    db.clubs = db.clubs.filter(demo); db.swimmers = db.swimmers.filter(demo);
+    db.meets = db.meets.filter(demo); db.results = db.results.filter(demo);
+  }
+
+  function dropMissingFollows() {
+    user.follows = user.follows.filter(function (id) { return idx.swimmer[id]; });
+    saveUser();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    const last = user.sync && user.sync.checkedAt ? new Date(user.sync.checkedAt).getTime() : 0;
+    if (document.visibilityState === 'visible' && Date.now() - last > SYNC_EVERY) syncRemote(false);
+  });
+
   // ---------- Başlat ----------
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !android) {
     navigator.serviceWorker.register('sw.js').catch(function () { /* çevrimdışı desteği yok */ });
@@ -1124,4 +1246,5 @@
     });
   }
   render();
+  syncRemote(false);
 })();

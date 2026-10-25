@@ -65,7 +65,7 @@
     ['K', '200KAR', '2:05.70', 'Summer McIntosh', 'CAN', '2025-06-12'],
     ['K', '400KAR', '4:23.65', 'Summer McIntosh', 'CAN', '2025-06-10']
   ].map(function (r, i) {
-    return { id: 'wr' + i, scope: 'WR', gender: r[0], event: r[1], pool: 50, time: t(r[2]), holder: r[3], team: r[4], date: r[5] };
+    return { id: 'wr' + i, scope: 'WR', gender: r[0], event: r[1], pool: 50, time: t(r[2]), holder: r[3], team: r[4], date: r[5], src: 'demo' };
   });
 
   // Puan hesabı için taban süreler (dünya rekoru temelli). 25 m havuzda yaklaşık %2,5 daha hızlı.
@@ -135,7 +135,7 @@
   function generateDemo() {
     const r = rng(20251025);
     const pick = function (a) { return a[Math.floor(r() * a.length)]; };
-    const clubs = CLUBS.map(function (c, i) { return { id: 'c' + (i + 1), name: c[0], city: c[1] }; });
+    const clubs = CLUBS.map(function (c, i) { return { id: 'c' + (i + 1), name: c[0], city: c[1], src: 'demo' }; });
     const swimmers = [];
     const used = {};
     for (let i = 0; i < 72; i++) {
@@ -151,13 +151,13 @@
         id: 's' + (i + 1), first: first, last: last, gender: gender,
         birthYear: 2006 + Math.floor(r() * 10),
         clubId: clubs[Math.floor(r() * clubs.length)].id,
-        demo: true,
+        src: 'demo',
         _talent: 1.06 + r() * 0.16,
         _group: GROUPS[Math.floor(r() * GROUPS.length)]
       });
     }
     const meets = MEETS.map(function (m, i) {
-      return { id: 'm' + (i + 1), name: m[2].slice(0, 4) + ' ' + m[0], city: m[1], date: m[2], pool: m[3] };
+      return { id: 'm' + (i + 1), name: m[2].slice(0, 4) + ' ' + m[0], city: m[1], date: m[2], pool: m[3], src: 'demo' };
     });
     const results = [];
     let n = 0;
@@ -174,7 +174,7 @@
           const noise = 1 + (r() - 0.45) * 0.025;
           const progress = 1 - mi * 0.003;
           const time = Math.round(base * s._talent * ageFactor(age) * slow * noise * progress);
-          results.push({ id: 'r' + (++n), meetId: meet.id, swimmerId: s.id, event: ev, time: time });
+          results.push({ id: 'r' + (++n), meetId: meet.id, swimmerId: s.id, event: ev, time: time, src: 'demo' });
         });
       });
     });
@@ -182,7 +182,7 @@
 
     const news = [
       { id: 'n1', date: '2026-10-20', theme: 'sea', title: 'Kulvar\'a hoş geldiniz: Sonuçlar, analiz ve sıralamalar tek uygulamada',
-        body: 'Kulvar ile yarış sonuçlarını takip edebilir, sporcu gelişimini grafikle izleyebilir, iki sporcuyu karşılaştırabilir ve en iyi 100 listelerine bakabilirsiniz.\n\nUygulamadaki sporcular, kulüpler ve yarışlar demo verisidir. Profil → Veri Yönetimi bölümünden kendi verilerinizi ekleyebilir veya CSV dosyasıyla içe aktarabilirsiniz.' },
+        body: 'Kulvar ile yarış sonuçlarını takip edebilir, sporcu gelişimini grafikle izleyebilir, iki sporcuyu karşılaştırabilir ve en iyi 100 listelerine bakabilirsiniz. Tüm özellikler ücretsizdir.\n\nSonuçlar uygulama açıldığında sunucudan otomatik olarak güncellenir. Sunucuda henüz resmi veri yokken örnek (demo) sporcular ve yarışlar gösterilir; gerçek veri geldiğinde demo veri kendiliğinden kalkar.' },
       { id: 'n2', date: '2026-10-18', theme: 'pool', title: 'Sporcu takip edin, yeni derecesi girildiğinde bildirim alın',
         body: 'Sporcu sayfasındaki yıldız düğmesiyle sporcuyu takibe alın. Takip ettiğiniz bir sporcunun yeni sonucu eklendiğinde uygulama içi bildirim ve (izin verdiyseniz) telefon bildirimi alırsınız.\n\nKişisel rekor kırılırsa bildirimde ayrıca belirtilir.' },
       { id: 'n3', date: '2026-10-15', theme: 'sunset', title: 'Puan sistemi nasıl hesaplanıyor?',
@@ -193,10 +193,17 @@
         body: 'Dünya ve Türkiye rekorları ekranlarında rekor ekleyebilir, düzenleyebilir veya silebilirsiniz. Dünya rekorları örnek olarak eklenmiştir; resmi listeden kontrol edip güncellemeniz önerilir.' }
     ];
 
-    return { version: 1, clubs: clubs, swimmers: swimmers, meets: meets, results: results, records: WORLD_RECORDS_LC.slice(), news: news };
+    return { version: 2, clubs: clubs, swimmers: swimmers, meets: meets, results: results, records: WORLD_RECORDS_LC.slice(), news: news };
   }
 
+  // Otomatik veri kaynağı: GitHub'daki veri/ klasöründen derlenen dosya. İlk adres erişilemezse
+  // uygulamayla birlikte gelen kopya kullanılır.
+  const REMOTE_URLS = [
+    'https://raw.githubusercontent.com/ufukcicek81/kulvar/main/data/sonuclar.json',
+    'data/sonuclar.json'
+  ];
+
   window.KulvarData = {
-    STYLES: STYLES, EVENTS: EVENTS, eventName: eventName, parseTime: t, baseTime: baseTime, generateDemo: generateDemo
+    REMOTE_URLS: REMOTE_URLS, STYLES: STYLES, EVENTS: EVENTS, eventName: eventName, parseTime: t, baseTime: baseTime, generateDemo: generateDemo
   };
 })();
