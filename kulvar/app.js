@@ -17,7 +17,7 @@
 
   let db = load(DB_KEY);
   if (!db || !db.swimmers) { db = D.generateDemo(); save(DB_KEY, db); }
-  const user = Object.assign({ follows: [], notifications: [], pro: false, bannerDismissed: false, seq: 0 }, load(USER_KEY) || {});
+  const user = Object.assign({ follows: [], notifications: [], bannerDismissed: false, seq: 0 }, load(USER_KEY) || {});
 
   function saveDb() { save(DB_KEY, db); reindex(); }
   function saveUser() { save(USER_KEY, user); updateBell(); }
@@ -160,10 +160,10 @@
   const MENUS = [
     { key: 'latest', label: 'Güncel Sonuçlar', icon: 'trophy', color: 'blue', href: '#/latest' },
     { key: 'meets', label: 'Tüm Yarışlar', icon: 'flag', color: 'orange', href: '#/meets' },
-    { key: 'analysis', label: 'Sporcu Analiz', icon: 'chart', color: 'blue2', href: '#/analysis', pro: true },
-    { key: 'compare', label: 'Karşılaştırma', icon: 'scale', color: 'orange2', href: '#/compare', pro: true },
-    { key: 'top100', label: 'En İyi 100', icon: 'star', color: 'blue2', href: '#/top100', pro: true },
-    { key: 'leaders', label: 'Zirvedekiler', icon: 'bars', color: 'orange2', href: '#/leaders', pro: true },
+    { key: 'analysis', label: 'Sporcu Analiz', icon: 'chart', color: 'blue2', href: '#/analysis' },
+    { key: 'compare', label: 'Karşılaştırma', icon: 'scale', color: 'orange2', href: '#/compare' },
+    { key: 'top100', label: 'En İyi 100', icon: 'star', color: 'blue2', href: '#/top100' },
+    { key: 'leaders', label: 'Zirvedekiler', icon: 'bars', color: 'orange2', href: '#/leaders' },
     { key: 'tr', label: 'Türkiye Rekorları', icon: 'flagTr', color: 'blue', href: '#/records/TR' },
     { key: 'wr', label: 'Dünya Rekorları', icon: 'globe', color: 'orange', href: '#/records/WR' }
   ];
@@ -191,8 +191,7 @@
     html += '<div class="section-head"><span class="crown-badge">' + ICON.crown + '</span><h3>Popüler Menüler</h3>' +
       '<button class="icon-btn soft" data-action="toggle-menu-mode" aria-label="Görünümü değiştir">' + (listMode ? ICON.grid : ICON.list) + '</button></div>';
     html += '<div class="' + (listMode ? 'menu-list' : 'menu-grid') + '">' + MENUS.map(function (m) {
-      return '<a class="menu-tile c-' + m.color + '" href="' + m.href + '" data-pro="' + (m.pro ? 1 : 0) + '">' +
-        (m.pro ? '<span class="pro-badge" title="Pro">' + ICON.crown + '</span>' : '') +
+      return '<a class="menu-tile c-' + m.color + '" href="' + m.href + '">' +
         ICON[m.icon] + '<span>' + esc(m.label) + '</span></a>';
     }).join('') + '</div>';
 
@@ -325,15 +324,15 @@
       '<div class="grow"><h1>' + esc(name(s)) + '</h1><p>' + esc(clubName(s.clubId)) + ' · ' + s.birthYear + ' · ' + genderLabel(s.gender) + '</p></div>' +
       '<button class="icon-btn follow' + (following ? ' on' : '') + '" data-action="follow" data-id="' + id + '" aria-label="Takip et">' + ICON.star + '</button></div>';
     html += '<div class="stats"><div><b>' + results.length + '</b><span>Derece</span></div><div><b>' + golds + '</b><span>Birincilik</span></div><div><b>' + podiums + '</b><span>Kürsü</span></div><div><b>' + (best ? best.p : '—') + '</b><span>En iyi puan</span></div></div>';
-    html += '<div class="actions"><a class="btn" href="#/analysis?s=' + id + '" data-pro="1">' + ICON.chart + 'Analiz</a>' +
-      '<a class="btn alt" href="#/compare?a=' + id + '" data-pro="1">' + ICON.scale + 'Karşılaştır</a>' +
+    html += '<div class="actions"><a class="btn" href="#/analysis?s=' + id + '"">' + ICON.chart + 'Analiz</a>' +
+      '<a class="btn alt" href="#/compare?a=' + id + '"">' + ICON.scale + 'Karşılaştır</a>' +
       '<button class="btn ghost" data-action="share-swimmer" data-id="' + id + '">' + ICON.share + '</button></div>';
     html += '<div class="section-head"><h3>Kişisel Rekorlar</h3><div class="seg small">' + [50, 25].map(function (p) {
       return '<button data-set="p" data-val="' + p + '" class="' + (p === pool ? 'on' : '') + '">' + p + 'm</button>';
     }).join('') + '</div></div>';
     html += rows.length ? '<div class="table">' + rows.map(function (r) {
       const m = idx.meet[r.meetId];
-      return '<a class="trow" href="#/analysis?s=' + id + '&e=' + r.event + '" data-pro="1"><span class="grow"><b>' + esc(D.eventName(r.event)) + '</b><small>' + esc(m.name) + ' · ' + fdate(m.date) + '</small></span>' +
+      return '<a class="trow" href="#/analysis?s=' + id + '&e=' + r.event + '"><span class="grow"><b>' + esc(D.eventName(r.event)) + '</b><small>' + esc(m.name) + ' · ' + fdate(m.date) + '</small></span>' +
         '<span class="tright"><b class="time">' + fmt(r.time) + '</b><small>' + (points(r) || '') + ' p</small></span></a>';
     }).join('') + '</div>' : empty(pool + 'm havuzda derece yok');
     html += '<div class="section-head"><h3>Yarış Geçmişi</h3><button class="btn small" data-action="add-result" data-swimmer="' + id + '">' + ICON.plus + 'Sonuç</button></div>';
@@ -392,7 +391,7 @@
     return html;
   };
 
-  // ---- Pro ekranlar ----
+  // ---- Analiz ve sıralama ekranları ----
   V.analysis = function () {
     const q = qs();
     const s = idx.swimmer[q.s];
@@ -611,8 +610,6 @@
     const followed = user.follows.map(function (id) { return idx.swimmer[id]; }).filter(Boolean);
     const perm = notifPermission();
     return pageTitle('Profil', '') +
-      '<div class="card pro-card ' + (user.pro ? 'on' : '') + '"><div class="card-head"><b>' + ICON.crown + ' Kulvar Pro</b><label class="switch"><input type="checkbox" data-action="toggle-pro"' + (user.pro ? ' checked' : '') + '><i></i></label></div>' +
-      '<p>Sporcu Analiz, Karşılaştırma, En İyi 100 ve Zirvedekiler. <small class="muted">Demo sürümde ücretsiz açılıp kapatılabilir.</small></p></div>' +
       '<div class="card"><div class="card-head"><b>' + ICON.bell + ' Bildirimler</b><span class="tag">' + ({ granted: 'Açık', denied: 'Engelli', 'default': 'Kapalı', unsupported: 'Desteklenmiyor' })[perm] + '</span></div>' +
       (perm === 'granted' || perm === 'unsupported' ? '<p class="muted">Takip ettiğiniz sporcuların yeni dereceleri bildirilir.</p>' :
         perm === 'denied' ? '<p class="muted">Bildirim izni cihaz ayarlarından engellenmiş. Ayarlar → Uygulamalar → Kulvar → Bildirimler bölümünden açabilirsiniz.</p>' :
@@ -628,7 +625,7 @@
       '<label class="list-item"><div class="grow"><b>Yedekten geri yükle</b></div>' + ICON.chev + '<input type="file" accept=".json,application/json" data-action="import-json" hidden></label>' +
       '<button class="list-item" data-action="clear-demo"><div class="grow"><b>Demo verisini sil</b><small>Örnek sporcuları ve yarışları kaldırır; kendi verileriniz kalır</small></div>' + ICON.chev + '</button>' +
       '<button class="list-item danger" data-action="reset"><div class="grow"><b>Demo verisine sıfırla</b><small>Tüm veriler silinir</small></div>' + ICON.chev + '</button></div>' +
-      '<p class="muted pad center">Kulvar v1.0.0 · ' + db.swimmers.length + ' sporcu · ' + db.meets.length + ' yarış · ' + db.results.length + ' derece</p>';
+      '<p class="muted pad center">Kulvar v1.1.0 · ' + db.swimmers.length + ' sporcu · ' + db.meets.length + ' yarış · ' + db.results.length + ' derece</p>';
   };
 
   function pageTitle(t, sub, action) {
@@ -639,7 +636,6 @@
   }
 
   // ---------- Yönlendirme ----------
-  const PRO_ROUTES = { analysis: 1, compare: 1, top100: 1, leaders: 1 };
   const TAB_ROUTES = { '': 'home', search: 'search', meets: 'meets', news: 'news', profile: 'profile' };
   const view = document.getElementById('view');
   let lastRoute = null;
@@ -648,11 +644,6 @@
     const hash = location.hash.replace(/^#\/?/, '').split('?')[0];
     const parts = hash.split('/').map(decodeURIComponent);
     const r = parts[0] || '';
-    if (PRO_ROUTES[r] && !user.pro) {
-      history.replaceState(null, '', '#/');
-      proSheet();
-      return render();
-    }
     let html;
     switch (r) {
       case '': html = V.home(); break;
@@ -715,8 +706,6 @@
 
   // ---------- Etkileşimler ----------
   document.addEventListener('click', function (e) {
-    const proLink = e.target.closest('[data-pro="1"]');
-    if (proLink && !user.pro) { e.preventDefault(); proSheet(); return; }
     const set = e.target.closest('[data-set]');
     if (set) { const p = {}; p[set.dataset.set] = set.dataset.val; setQs(p); return; }
     const a = e.target.closest('[data-action]');
@@ -755,7 +744,6 @@
     'dismiss-banner': function () { user.bannerDismissed = true; saveUser(); render(); },
     'enable-notif': function () { requestNotif(); },
     'toggle-menu-mode': function () { user.menuList = !user.menuList; saveUser(); render(); },
-    'toggle-pro': function (el) { user.pro = el.checked; saveUser(); toast(user.pro ? 'Pro özellikler açıldı' : 'Pro özellikler kapatıldı'); render(); },
     'follow': function (el) {
       const id = el.dataset.id;
       const i = user.follows.indexOf(id);
@@ -859,16 +847,6 @@
       body + '<p class="form-error" hidden></p><div class="sheet-actions">' + (extra || '') + '<button class="btn" type="submit">' + esc(submit) + '</button></div></form>';
   }
   function field(label, input) { return '<label class="field"><span>' + esc(label) + '</span>' + input + '</label>'; }
-
-  function proSheet() {
-    openSheet('<div class="pro-sheet"><span class="pro-icon">' + ICON.crown + '</span><h2>Kulvar Pro</h2>' +
-      '<p>Sporcu Analiz, Karşılaştırma, En İyi 100 ve Zirvedekiler Pro özelliklerdir.</p>' +
-      '<ul><li>Derece gelişim grafikleri ve puanlar</li><li>İki sporcunun branş branş kıyaslaması</li><li>Yaş, sezon ve havuza göre sıralamalar</li><li>Her branşta ilk üç</li></ul>' +
-      '<button class="btn wide" id="proOn">Pro\'yu etkinleştir (demo)</button><button class="btn ghost wide" data-close>Daha sonra</button></div>');
-    document.getElementById('proOn').addEventListener('click', function () {
-      user.pro = true; saveUser(); closeSheet(); toast('Pro özellikler açıldı'); render();
-    });
-  }
 
   function meetForm() {
     openSheet(formShell('Yarış Ekle',
